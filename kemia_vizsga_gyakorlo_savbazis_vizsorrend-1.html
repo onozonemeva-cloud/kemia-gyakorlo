@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kémia vizsgagyakorló</title>
+<style>
+:root{--p:#6356e8;--p2:#332b78;--g:#0e9f6e;--r:#e34b67;--bg:#f5f6fb;--card:#fff;--ink:#172033;--muted:#687385;--line:#dfe4ec}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(135deg,#f7f8ff,#edf9f4);font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
+header{background:linear-gradient(135deg,var(--p2),var(--p));color:#fff;padding:22px 14px}
+.wrap{max-width:1050px;margin:auto}
+h1{margin:0;font-size:28px}.sub{opacity:.85;margin-top:5px}
+nav{display:flex;gap:7px;overflow:auto;margin-top:18px}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:11px 14px;cursor:pointer}
+.nav{background:#ffffff1d;color:#fff;border:1px solid #ffffff40;white-space:nowrap}.nav.active{background:#fff;color:var(--p2)}
+main{padding:20px 14px 50px}.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 10px 28px #1b254012;margin-bottom:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.topic{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer}.topic:hover{border-color:#aaa2ff}
+.topic .icon{font-size:30px}.topic h3{margin:8px 0 4px}.topic p{margin:0;color:var(--muted);font-size:14px}
+.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#efedff;color:#5146c7;font-size:12px;font-weight:800}
+.progress{height:9px;background:#e9ebf0;border-radius:99px;overflow:hidden;margin:12px 0}.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--p),var(--g))}
+.question{font-size:21px;font-weight:700;line-height:1.5;margin:18px 0}
+.options{display:grid;gap:9px}.option{width:100%;text-align:left;background:#fff;border:2px solid var(--line);padding:14px;border-radius:14px}.option:hover{border-color:var(--p)}.option.correct{border-color:var(--g);background:#eaf8f2}.option.wrong{border-color:var(--r);background:#fff0f3}.option.lock{cursor:default}
+.feedback{padding:14px;border-radius:12px;margin-top:13px;line-height:1.5}.good{background:#eaf8f2;border-left:4px solid var(--g)}.bad{background:#fff0f3;border-left:4px solid var(--r)}
+.primary{background:var(--p);color:#fff}.secondary{background:#edf0f5}.danger{background:#fff0f3;color:#a92043}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.hidden{display:none!important}
+select{padding:10px;border:1px solid var(--line);border-radius:11px;background:#fff;font:inherit}
+.stat{background:#f8f9fc;border:1px solid var(--line);border-radius:15px;padding:17px}.stat b{display:block;font-size:29px;margin-top:3px}
+.small{color:var(--muted);font-size:14px}
+.lab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.lab-mode{background:#fff;border:2px solid var(--line);border-radius:17px;padding:17px;cursor:pointer;text-align:left}
+.lab-mode:hover{border-color:var(--p)}
+.lab-mode.active{border-color:var(--p);background:#f3f1ff}
+.lab-mode .emoji{font-size:28px}.lab-mode h3{margin:7px 0 5px}.lab-mode p{margin:0;color:var(--muted);font-size:14px;line-height:1.4}
+.chem-eq{font-size:25px;font-weight:800;text-align:center;padding:16px 8px;line-height:1.55;background:#f8f9fc;border-radius:15px;margin:14px 0}
+.chem-note{padding:12px 14px;border-radius:12px;background:#fff8df;border-left:4px solid #e3b52f;line-height:1.5}
+.lab-score{display:flex;gap:8px;flex-wrap:wrap}.lab-score .badge{background:#edf8f4;color:#14785a}
+.list button{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);margin:6px 0}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:20px}
+@media(max-width:600px){h1{font-size:23px}.question{font-size:19px}.card{padding:16px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>🧪 Kémia vizsgagyakorló</h1>
+<div class="sub">A kérdések automatikusan betöltődnek – neked csak válaszolnod kell.</div>
+<nav>
+<button class="nav active" data-page="home">🏠 Kezdőlap</button>
+<button class="nav" data-page="practice">🎯 Gyakorlás</button>
+<button class="nav" data-page="quiz">📝 Vizsgakör</button>
+<button class="nav" data-page="cards">🃏 Kártyák</button>
+<button class="nav" data-page="acidlab">🧪 Sav–bázis labor</button>
+<button class="nav" data-page="mistakes">❌ Hibásak</button>
+<button class="nav" data-page="stats">📊 Eredmény</button>
+</nav>
+</div></header>
+
+<main class="wrap">
+<section id="home" class="page active">
+<div class="card"><h2>Válassz témakört! 👇</h2>
+<p class="small">A feltöltött kérdésdokumentumokból automatikusan bekerült a kérdésbank. Nincs szükség gépelésre.</p></div>
+<div class="grid" id="topicGrid"></div>
+</section>
+
+<section id="practice" class="page">
+<div class="card">
+<div class="controls"><span class="badge" id="pTopic"></span><span class="badge" id="pCount"></span></div>
+<div class="progress"><span id="pProgress"></span></div>
+<div class="question" id="pQuestion"></div>
+<div class="options" id="pOptions"></div>
+<div id="pFeedback" class="feedback hidden"></div>
+<div class="controls" style="margin-top:14px">
+<button class="primary" id="pNext" disabled>Következő ➡️</button>
+<button class="secondary" id="pShuffle">🔀 Újrakeverés</button>
+</div>
+</div>
+</section>
+
+<section id="quiz" class="page">
+<div class="card"><h2>📝 Vizsgakör</h2><p class="small">Véletlenszerű kérdésekből álló kattintós teszt.</p>
+<div class="controls"><select id="quizTopic"></select><select id="quizCount">
+<option value="10">10 kérdés</option><option value="20">20 kérdés</option><option value="30">30 kérdés</option><option value="all">Összes</option>
+</select><button class="primary" id="quizStart">🚀 Indítás</button></div></div>
+<div id="quizBox" class="card hidden">
+<div class="controls"><span class="badge" id="qNo"></span><span class="badge">Pont: <b id="qScore">0</b></span></div>
+<div class="progress"><span id="qProgress"></span></div><div class="question" id="qQuestion"></div>
+<div class="options" id="qOptions"></div><div id="qFeedback" class="feedback hidden"></div>
+<button class="primary" id="qNext" disabled style="margin-top:14px">Következő ➡️</button>
+</div>
+</section>
+
+<section id="cards" class="page">
+<div class="card"><h2>🃏 Tanulókártyák</h2><select id="cardTopic"></select> <button class="primary" id="cardShuffle">🔀 Keverés</button></div>
+<div class="card" id="flash" style="min-height:260px;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer">
+<div><div class="question" id="cardText"></div><div class="small" id="cardHint">Koppints a kártyára a válaszhoz 👆</div></div></div>
+<div class="controls"><button class="secondary" id="cardPrev">⬅️ Előző</button><button class="primary" id="cardNext">Következő ➡️</button></div>
+</section>
+
+
+<section id="acidlab" class="page">
+  <div class="card">
+    <h2>🧪 Sav–bázis labor</h2>
+    <p class="small">A feltöltött minimumkérdések C része és a képen szereplő közömbösítési példák alapján. Neked itt sem kell gépelni: minden feladat kattintós.</p>
+  </div>
+
+  <div class="card">
+    <div class="lab-grid">
+      <button class="lab-mode active" data-labmode="equation">
+        <div class="emoji">⚗️</div><h3>Egyenlet felismerése</h3>
+        <p>Kapd meg a savat és a bázist, majd válaszd ki a helyes, rendezett közömbösítési egyenletet.</p>
+      </button>
+      <button class="lab-mode" data-labmode="products">
+        <div class="emoji">🧩</div><h3>Mi keletkezik?</h3>
+        <p>Válaszd ki a reakció termékeit a megadott sav és bázis alapján.</p>
+      </button>
+      <button class="lab-mode" data-labmode="names">
+        <div class="emoji">🏷️</div><h3>Név ↔ képlet</h3>
+        <p>Gyakorold a felsorolt savak és bázisok nevét és képletét.</p>
+      </button>
+      <button class="lab-mode" data-labmode="balance">
+        <div class="emoji">⚖️</div><h3>Rendezés</h3>
+        <p>Válaszd ki azt az egyenletet, amelyben a sztöchiometriai együtthatók helyesen szerepelnek.</p>
+      </button>
+      <button class="lab-mode" data-labmode="truefalse">
+        <div class="emoji">✅</div><h3>Igaz vagy hamis?</h3>
+        <p>Gyors állítások a savakról, bázisokról és közömbösítésről.</p>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lab-score">
+      <span class="badge" id="labModeName">Egyenlet felismerése</span>
+      <span class="badge">Pont: <b id="labScore">0</b></span>
+      <span class="badge">Kérdés: <b id="labNo">1</b></span>
+    </div>
+    <div class="progress"><span id="labProgress"></span></div>
+    <div class="question" id="labQuestion"></div>
+    <div id="labEq" class="chem-eq hidden"></div>
+    <div class="options" id="labOptions"></div>
+    <div id="labFeedback" class="feedback hidden"></div>
+    <div class="controls" style="margin-top:14px">
+      <button class="primary" id="labNext" disabled>Következő ➡️</button>
+      <button class="secondary" id="labShuffle">🔀 Új sorozat</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chem-note"><b>📌 Amit ebből a felületből külön gyakorolhatsz:</b> sósav, szénsav, salétromossav, salétromsav, kénessav, kénsav, foszforossav, foszforsav; valamint nátrium-, kálium-, magnézium-, kalcium-, alumínium- és ammónium-hidroxid.</div>
+  </div>
+</section>
+
+<section id="mistakes" class="page">
+<div class="card"><h2>❌ Hibásan válaszolt kérdések</h2><p class="small">Ezeket érdemes újra gyakorolni.</p><div id="mistakeList" class="list"></div></div>
+</section>
+
+<section id="stats" class="page">
+<div class="card"><h2>📊 Eredmény</h2><div class="grid">
+<div class="stat"><span class="small">Megválaszolt</span><b id="sTotal">0</b></div>
+<div class="stat"><span class="small">Helyes</span><b id="sGood">0</b></div>
+<div class="stat"><span class="small">Hibás</span><b id="sBad">0</b></div>
+<div class="stat"><span class="small">Tudásarány</span><b id="sRate">0%</b></div>
+</div><button class="danger" id="reset" style="margin-top:16px">🗑️ Haladás törlése</button></div>
+</section>
+</main>
+<footer>🧪 Kémia gyakorló a feltöltött kérdésdokumentumok alapján.</footer>
+
+<script>
+const DATA = [{"id": 1, "topic": "Iránykérdések", "no": "1", "q": "Mik az anyag egyetemes tulajdonságai, milyen összefüggés van közöttük?", "a": "A tananyag alapján az anyag jellemzéséhez az állapotjelzők és az ezek közötti összefüggések tartoznak. A válaszban érdemes a mennyiségi kapcsolatot és a megfelelő fizikai mennyiségeket megnevezni.", "topic_id": "atomok", "options": ["A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A tananyag alapján az anyag jellemzéséhez az állapotjelzők és az ezek közötti összefüggések tartoznak"], "correct": 3}, {"id": 2, "topic": "Iránykérdések", "no": "2", "q": "Mi az atom, milyen részecskékből áll, mik a jellemzőik?", "a": "Az atom atommagból és elektronburokból áll. Az atommag protonokat és neutronokat tartalmaz; az elektronok az elektronburokban, atompályákon találhatók. A proton pozitív, a neutron semleges, az elektron negatív töltésű. A forrás külön megadja a részecskék tömegét és töltését is.", "topic_id": "atomok", "options": ["Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Az atom atommagból és elektronburokból áll", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 1}, {"id": 3, "topic": "Iránykérdések", "no": "3", "q": "Mit jelent az atompálya, mik az elektronok beépülésének szabályai?", "a": "Az atompálya az elektron tartózkodási valószínűségével jellemzett tértartomány. A forrás az elektronburok energiaszintjeit, a héjak maximális elektronszámát és a kvantummechanikai atommodellt tárgyalja.", "topic_id": "atomok", "options": ["Az atompálya az elektron tartózkodási valószínűségével jellemzett tértartomány", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival."], "correct": 0}, {"id": 4, "topic": "Iránykérdések", "no": "4", "q": "Mit mutat a periódus, mit jelentenek a főcsoportok?", "a": "A periódus az elektronhéjak számával, a főcsoport pedig a külső, vegyértékelektronok számával kapcsolatos. A periódusos rendszer helyzete alapján következtethetünk az elektronszerkezetre és a kémiai tulajdonságokra.", "topic_id": "atomok", "options": ["A periódus az elektronhéjak számával, a főcsoport pedig a külső, vegyértékelektronok számával kapcsolatos", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 0}, {"id": 5, "topic": "Iránykérdések", "no": "5", "q": "Milyen periodikus tulajdonságok vannak a periódusos rendszerben? Mit jelentenek?", "a": "Tipikusan az atomsugár, az ionizációs energia és az elektronegativitás periodikus változását kell ismerni, valamint azt, hogy ezek hogyan változnak perióduson belül és főcsoportban.", "topic_id": "atomok", "options": ["A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Tipikusan az atomsugár, az ionizációs energia és az elektronegativitás periodikus változását kell ismerni, valamint azt, hogy ezek hogyan változnak perióduson belül és főcsoportban.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival."], "correct": 2}, {"id": 6, "topic": "Iránykérdések", "no": "6", "q": "Az elemek atomjai milyen módon, módokon érhetik el a stabil/telített elektronszerkezetű állapotot?", "a": "Elektron leadásával, elektron felvételével vagy elektronok közös használatával, vagyis kovalens kötéssel.", "topic_id": "atomok", "options": ["Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Elektron leadásával, elektron felvételével vagy elektronok közös használatával, vagyis kovalens kötéssel.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 1}, {"id": 7, "topic": "Iránykérdések", "no": "7", "q": "Milyen kémiai kötéseket ismer, mik a jellemzőik?", "a": "A fő kötések: ionos, kovalens és fémes kötés. A kovalens kötésnél az atomok közös elektronpárokat használnak; az ionos kötés ionok közötti elektrosztatikus vonzás; a fémes kötésben a fémrács részecskéi között delokalizált elektronok vesznek részt.", "topic_id": "kotések", "options": ["Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A fő kötések: ionos, kovalens és fémes kötés", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival."], "correct": 1}, {"id": 8, "topic": "Iránykérdések", "no": "8", "q": "Mit jelent az apoláris és poláris molekula?", "a": "Poláris molekulában a töltéseloszlás nem szimmetrikus, ezért dipólusmomentum alakul ki. Apoláris molekulában nincs eredő dipólusmomentum. Példaként H2 és O2 apoláris, H2O poláris.", "topic_id": "kotések", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Poláris molekulában a töltéseloszlás nem szimmetrikus, ezért dipólusmomentum alakul ki", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 1}, {"id": 9, "topic": "Iránykérdések", "no": "9", "q": "Mit határoznak meg az állapotjelzők? Mik az intenzív állapotjelzők, milyen összefüggés van közöttük?", "a": "Az állapotjelzők a rendszer állapotát jellemzik. Az intenzív állapotjelzők nem függnek a rendszer mennyiségétől; ide tartozik például a nyomás, a hőmérséklet és a koncentráció. A megfelelő állapotegyenletet/összefüggést is érdemes felírni.", "topic_id": "allapot", "options": ["Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Az állapotjelzők a rendszer állapotát jellemzik", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 1}, {"id": 10, "topic": "Iránykérdések", "no": "10", "q": "Mutassa be a víz fázisdiagrammját!", "a": "A víz fázisdiagramján a szilárd, folyékony és gázfázis tartományai, valamint a fázishatárok láthatók. Ismerni kell a hármaspont és a kritikus pont fogalmát, és a víz különleges olvadási görbéjének irányát.", "topic_id": "allapot", "options": ["A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A víz fázisdiagramján a szilárd, folyékony és gázfázis tartományai, valamint a fázishatárok láthatók", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 2}, {"id": 11, "topic": "Iránykérdések", "no": "11", "q": "Hogyan elegyedhetnek egymással a folyadékok? (3 elegyedés rövid bemutatása példával)", "a": "Három eset: teljes elegyedés (pl. víz–etanol), részleges elegyedés (pl. egyes víz–szerves oldószer rendszerek), illetve gyakorlatilag nem elegyedő folyadékok (pl. víz–olaj).", "topic_id": "allapot", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Három eset: teljes elegyedés (pl", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 2}, {"id": 12, "topic": "Iránykérdések", "no": "12", "q": "Milyen folyamatot nevezünk exoterm folyamatnak? (1 példán keresztül mutassa be)", "a": "Exoterm folyamatban energia, hő szabadul fel a környezet felé; a reakció entalpiaváltozása negatív. Példa: hidrogén égése oxigénben.", "topic_id": "allapot", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Exoterm folyamatban energia, hő szabadul fel a környezet felé; a reakció entalpiaváltozása negatív"], "correct": 3}, {"id": 13, "topic": "Iránykérdések", "no": "13", "q": "Milyen folyamatot nevezünk endoterm folyamatnak? (1 példán keresztül mutassa be)", "a": "Endoterm folyamatban a rendszer energiát/hőt vesz fel a környezetből; a reakció entalpiaváltozása pozitív. Példa lehet egy endoterm kémiai reakció vagy olyan folyamat, amely energiát igényel.", "topic_id": "allapot", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Endoterm folyamatban a rendszer energiát/hőt vesz fel a környezetből; a reakció entalpiaváltozása pozitív", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 1}, {"id": 14, "topic": "Iránykérdések", "no": "14", "q": "Mi a belső energia? Írja fel a belső energiaváltozás képletét!", "a": "A belső energia a rendszer mikroszkopikus részecskéinek összes energiája. A tananyagban az energiamegmaradás és a hő- illetve munkacsere kapcsolata szerepel; a szokásos összefüggés: ΔU = Q + W, ha W a rendszeren végzett munka.", "topic_id": "allapot", "options": ["A belső energia a rendszer mikroszkopikus részecskéinek összes energiája", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival."], "correct": 0}, {"id": 15, "topic": "Iránykérdések", "no": "15", "q": "Mit mond ki Hess tétele? (1 példán mutassa be)", "a": "A reakcióhő csak a kiindulási és végállapottól függ, az úttól nem. Egy összetett reakció hőváltozása felbontható részreakciók hőváltozásainak összegére.", "topic_id": "allapot", "options": ["A reakcióhő csak a kiindulási és végállapottól függ, az úttól nem", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 0}, {"id": 16, "topic": "Iránykérdések", "no": "16", "q": "Mi az aktiválási energia? Hogyan befolyásolja a katalizátor?", "a": "Az aktiválási energia a reakció beindulásához szükséges többletenergia; jele Ea, mértékegysége kJ/mol. A katalizátor alternatív, kisebb aktiválási energiájú reakcióutat biztosít, így gyorsítja a reakciót.", "topic_id": "allapot", "options": ["A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Az aktiválási energia a reakció beindulásához szükséges többletenergia; jele Ea, mértékegysége kJ/mol", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 1}, {"id": 17, "topic": "Iránykérdések", "no": "17", "q": "Mi az entrópia és az entrópiaváltozás? (képleteket is írjon fel)", "a": "Az entrópia a rendszer rendezetlenségével/energia- és részecskeeloszlásának sokféleségével kapcsolatos állapotfüggvény. Reverzibilis folyamatra: ΔS = Qrev/T. A képletet és az entrópia változásának értelmezését ismerni kell.", "topic_id": "allapot", "options": ["A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Az entrópia a rendszer rendezetlenségével/energia- és részecskeeloszlásának sokféleségével kapcsolatos állapotfüggvény"], "correct": 3}, {"id": 18, "topic": "Iránykérdések", "no": "18", "q": "Mit jelentenek a folyamat végbemenetele szempontjából: ΔG < 0; ΔG > 0; ΔG = 0?", "a": "ΔG < 0: a folyamat az adott feltételek mellett termodinamikailag kedvező/önként végbemehet. ΔG > 0: az adott irányban nem kedvező. ΔG = 0: egyensúlyi állapot.", "topic_id": "allapot", "options": ["ΔG < 0: a folyamat az adott feltételek mellett termodinamikailag kedvező/önként végbemehet", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 0}, {"id": 19, "topic": "Iránykérdések", "no": "19", "q": "Mik a kémiai reakciók végbemenetelének feltételei? (reakciósebesség, befolyásoló tényezők, reakciók feltételei)", "a": "Szükséges a reagáló részecskék találkozása, megfelelő irányú és elegendő energiájú ütközése. A reakciósebességet befolyásolja többek között a koncentráció, hőmérséklet, fény, nyomás és a katalizátor.", "topic_id": "reakciok", "options": ["Szükséges a reagáló részecskék találkozása, megfelelő irányú és elegendő energiájú ütközése", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 0}, {"id": 20, "topic": "Iránykérdések", "no": "20", "q": "Jellemezze az egyensúlyra vezető reakciókat!", "a": "Reverzibilis reakcióknál a direkt és a fordított folyamat egyszerre mehet végbe. Dinamikus egyensúlyban a két ellentétes reakció sebessége megegyezik, miközben makroszkopikusan állandó állapot alakul ki.", "topic_id": "reakciok", "options": ["Reverzibilis reakcióknál a direkt és a fordított folyamat egyszerre mehet végbe", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 0}, {"id": 21, "topic": "Iránykérdések", "no": "21", "q": "Mit mond ki a Le Chatelier–Braun-elv? Hogyan zavarható meg az egyensúly?", "a": "Ha egy egyensúlyban lévő rendszert külső hatás ér, a rendszer azzal ellentétes irányban tolódik el, hogy a hatást mérsékelje. Változtatható például a koncentráció, a nyomás vagy a hőmérséklet.", "topic_id": "reakciok", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ha egy egyensúlyban lévő rendszert külső hatás ér, a rendszer azzal ellentétes irányban tolódik el, hogy a hatást mérsékelje"], "correct": 3}, {"id": 22, "topic": "Iránykérdések", "no": "22", "q": "Sorolja fel a kémiai reakciók 5 csoportosítási szempontját!", "a": "A forrás öt szempontja: a részt vevő anyagok száma; a reakció kémiai jellege; a reakció termodinamikai jellege; az időbeli lefolyás; a folyamat iránya.", "topic_id": "reakciok", "options": ["A forrás öt szempontja: a részt vevő anyagok száma; a reakció kémiai jellege; a reakció termodinamikai jellege; az időbeli lefolyás; a folyamat iránya.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 0}, {"id": 23, "topic": "Iránykérdések", "no": "23", "q": "Brönsted sav-bázis elmélete alapján, mit nevezünk savaknak és bázisoknak? (1 példaegyenlet)", "a": "Brönsted szerint a sav protonleadó, a bázis protonfelvevő. Példa: HCl + H2O ⇌ Cl− + H3O+.", "topic_id": "savbazis", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Brönsted szerint a sav protonleadó, a bázis protonfelvevő", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 1}, {"id": 24, "topic": "Iránykérdések", "no": "24", "q": "Mit jelent az amfoter anyag? Mondjon példát amfoter anyagra, írjon fel egyenletet!", "a": "Amfoter anyag savként és bázisként is viselkedhet, a reakciópartnerétől függően. Például a víz: HCl-lel bázisként, NH3-mal savként viselkedik.", "topic_id": "savbazis", "options": ["A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Amfoter anyag savként és bázisként is viselkedhet, a reakciópartnerétől függően"], "correct": 3}, {"id": 25, "topic": "Iránykérdések", "no": "25", "q": "Mit nevezünk sav-bázis puffernek?", "a": "Olyan oldat, amely kis mennyiségű sav vagy bázis hozzáadásakor, illetve mérsékelt hígításkor csak kis mértékben változtatja a pH-ját; tipikusan gyenge sav és konjugált bázisa, vagy gyenge bázis és konjugált sava alkotja.", "topic_id": "savbazis", "options": ["Olyan oldat, amely kis mennyiségű sav vagy bázis hozzáadásakor, illetve mérsékelt hígításkor csak kis mértékben változtatja a pH-ját; tipikusan gyenge sav és konjugált bázisa, vagy gyenge bázis és konjugált sava alkotja.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 0}, {"id": 26, "topic": "Iránykérdések", "no": "26", "q": "Mit nevezünk redoxireakciónak, milyen két folyamat megy benne végbe és ezek mit jelentenek?", "a": "Redoxireakció elektronátadással járó folyamat, amelyben oxidáció és redukció egyszerre történik. Oxidáció = elektronleadás, redukció = elektronfelvétel.", "topic_id": "redox", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Redoxireakció elektronátadással járó folyamat, amelyben oxidáció és redukció egyszerre történik", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 2}, {"id": 27, "topic": "Iránykérdések", "no": "27", "q": "Állapítsa meg az oxidációs számokat: fémion; oxigén vegyületekben; hidrogén vegyületekben; atomok.", "a": "Egyszerű ionnál az oxidációs szám megegyezik a töltéssel. Elemi állapotban 0. Oxigén vegyületekben általában −2, peroxidokban −1. Hidrogén általában +1, fém-hidridekben −1.", "topic_id": "redox", "options": ["Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Egyszerű ionnál az oxidációs szám megegyezik a töltéssel"], "correct": 3}, {"id": 28, "topic": "Iránykérdések", "no": "28", "q": "Mi jellemző a szerves vegyületekre? (kötéstípus, szerkezet, fizikai tulajdonságok, reakciókészség)", "a": "A forrás szerint a szerves vegyületek szénvegyületek; jellemző a kovalens kötés, a hosszú elágazó láncok és gyűrűk, nagyobb hőérzékenység, általában kisebb vízoldhatóság és sokszor lassabb reakciók.", "topic_id": "szerves", "options": ["A forrás szerint a szerves vegyületek szénvegyületek; jellemző a kovalens kötés, a hosszú elágazó láncok és gyűrűk, nagyobb hőérzékenység, általában kisebb vízoldhatóság és sokszor lassabb reakciók.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 0}, {"id": 29, "topic": "Iránykérdések", "no": "29", "q": "Csoportosítsa a szerves vegyületeket a szénlánc minősége szerint!", "a": "Nyílt láncú/alifás és zárt láncú/gyűrűs vegyületek. A zárt láncúak között izociklusos és heterociklusos, az izociklusosak között aliciklusos és aromás rendszerek különíthetők el.", "topic_id": "szerves", "options": ["Nyílt láncú/alifás és zárt láncú/gyűrűs vegyületek", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 0}, {"id": 30, "topic": "Iránykérdések", "no": "30", "q": "Sorolja fel a szerves vegyületek funkciós csoportjait, képlettel együtt!", "a": "A forrás példái: halogén (−F, −Cl, −Br, −I), hidroxil (−OH), karbonil (−CO−), aminocsoport (−NH2), nitrozocsoport (−NO), nitrocsoport (−NO2), karboxilcsoport (−COOH), szulfocsoport (−SO3H).", "topic_id": "szerves", "options": ["Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A forrás példái: halogén (−F, −Cl, −Br, −I), hidroxil (−OH), karbonil (−CO−), aminocsoport (−NH2), nitrozocsoport (−NO), nitrocsoport (−NO2), karboxilcsoport (−COOH), szulfocsoport (−SO3H)."], "correct": 3}, {"id": 31, "topic": "Minimum", "no": "A", "q": "Elemek atomszerkezete, elektronszerkezete: H, C, N, O; nemesgázok; halogének; alkálifémek; alkáliföldfémek.", "a": "Tanuld meg az elemek helyét, rendszámát és az elektronszerkezetük fő jellemzőit. Az atom felépítéséhez a proton–neutron–elektron szerepét és töltését is tudd.", "topic_id": "atomok", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Tanuld meg az elemek helyét, rendszámát és az elektronszerkezetük fő jellemzőit", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 2}, {"id": 32, "topic": "Minimum", "no": "B", "q": "A szerves vegyületek neve és szerkezeti képlete; funkciós csoportok képlettel, vegyülettípussal.", "a": "Gyakorold az alkánokat, halogénszármazékokat, hidroxi-vegyületeket, oxovegyületeket, aminokat, nitrovegyületeket és karbonsavakat.", "topic_id": "szerves", "options": ["Gyakorold az alkánokat, halogénszármazékokat, hidroxi-vegyületeket, oxovegyületeket, aminokat, nitrovegyületeket és karbonsavakat.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 0}, {"id": 33, "topic": "Minimum", "no": "C", "q": "Sav–bázis reakciók: HCl, H2CO3, HNO2, HNO3, H2SO3, H2SO4, H3PO3, H3PO4; valamint a felsorolt hidroxidok és közömbösítési egyenletek.", "a": "Gyakorold a közömbösítés egyenleteinek felírását és rendezését. Példák: HCl + KOH → KCl + H2O; HCl + NaOH → NaCl + H2O; HNO3 + NaOH → NaNO3 + H2O.", "topic_id": "savbazis", "options": ["Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Gyakorold a közömbösítés egyenleteinek felírását és rendezését", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni."], "correct": 1}, {"id": 34, "topic": "Minimum", "no": "D1", "q": "Mik az anyag egyetemes tulajdonságai, és milyen matematikai összefüggés van közöttük?", "a": "Lásd az iránykérdések 1. pontját; az állapotjelzők és az állapotegyenlet kapcsolata a lényeg.", "topic_id": "allapot", "options": ["Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Lásd az iránykérdések 1", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival."], "correct": 2}, {"id": 35, "topic": "Minimum", "no": "D2", "q": "Mi az atom, és mi alkotórészeinek jellemző tulajdonságai (hely, töltés, tömeg)?", "a": "Atommag: proton + neutron; elektronburok: elektronok. A feltöltött atomokról szóló tananyag táblázata a töltést és tömeget is megadja.", "topic_id": "atomok", "options": ["A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Atommag: proton + neutron; elektronburok: elektronok", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 2}, {"id": 36, "topic": "Minimum", "no": "D3", "q": "Mik az állapothatározók, és milyen matematikai összefüggés van közöttük?", "a": "A rendszer állapotát jellemző mennyiségek; a feladatban az adott tananyagban szereplő összefüggést kell alkalmazni.", "topic_id": "allapot", "options": ["A rendszer állapotát jellemző mennyiségek; a feladatban az adott tananyagban szereplő összefüggést kell alkalmazni.", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le."], "correct": 0}, {"id": 37, "topic": "Minimum", "no": "D4", "q": "Mit neveznek poláris és apoláris molekuláknak (példákkal)?", "a": "Lásd az iránykérdések 8. pontját.", "topic_id": "kotések", "options": ["Lásd az iránykérdések 8", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival."], "correct": 0}, {"id": 38, "topic": "Minimum", "no": "D5", "q": "Mit mond ki a Le Chatelier–Braun-elv?", "a": "Lásd az iránykérdések 21. pontját.", "topic_id": "kotések", "options": ["Lásd az iránykérdések 21", "A kérdésnél csak a hőmérsékletet kell figyelembe venni.", "Ez a fogalom kizárólag a laboratóriumi eszközök működését írja le.", "Ennek nincs kapcsolata az atomok, ionok vagy molekulák tulajdonságaival."], "correct": 0}, {"id": 39, "topic": "Számítás", "no": "1", "q": "Hány mólos az az oldat, amelynek 500 cm³-ében 2,0 g NaOH van feloldva? M(NaOH) = 40,0 g/mol.", "a": "n = m/M = 2,0/40,0 = 0,050 mol. V = 0,500 dm³. c = n/V = 0,100 mol/dm³.", "topic_id": "szamitas", "options": ["A térfogatot minden esetben grammként kell behelyettesíteni.", "n = m/M = 2,0/40,0 = 0,050 mol", "A reakcióegyenlet együtthatói nem befolyásolják a számítást.", "A számításhoz nincs szükség anyagmennyiségre vagy moláris tömegre."], "correct": 1}, {"id": 40, "topic": "Számítás", "no": "2", "q": "Hány g HCl van 400 g 38,0%-os sósavoldatban? Hány mol hidrogén-kloridnak felel ez meg? M(HCl) = 36,5 g/mol.", "a": "m(HCl) = 400 × 0,380 = 152 g. n(HCl) = 152/36,5 ≈ 4,16 mol.", "topic_id": "szamitas", "options": ["m(HCl) = 400 × 0,380 = 152 g", "A számításhoz nincs szükség anyagmennyiségre vagy moláris tömegre.", "A térfogatot minden esetben grammként kell behelyettesíteni.", "A reakcióegyenlet együtthatói nem befolyásolják a számítást."], "correct": 0}, {"id": 41, "topic": "Számítás", "no": "3", "q": "Hány g víz keletkezhet, ha 2,0 g H2-t 32,0 g O2-vel reagáltatunk? 2 H2 + O2 → 2 H2O. M(H)=1,0 g/mol; M(O)=16,0 g/mol.", "a": "n(H2)=2,0/2,0=1,0 mol; n(O2)=32,0/32,0=1,0 mol. A 2:1 arány miatt a H2 a limitáló reagens. 1 mol H2 → 1 mol H2O, így m(H2O)=18,0 g.", "topic_id": "szamitas", "options": ["n(H2)=2,0/2,0=1,0 mol; n(O2)=32,0/32,0=1,0 mol", "A térfogatot minden esetben grammként kell behelyettesíteni.", "A számításhoz nincs szükség anyagmennyiségre vagy moláris tömegre.", "A reakcióegyenlet együtthatói nem befolyásolják a számítást."], "correct": 0}, {"id": 42, "topic": "Számítás", "no": "4", "q": "Hogyan kell készíteni 250 cm³ 0,1 mólos NaOH-oldatot? M(NaOH)=40,0 g/mol.", "a": "n = cV = 0,1 × 0,250 = 0,025 mol. m = nM = 0,025 × 40,0 = 1,00 g. 1,00 g NaOH-t vízben feloldunk, majd 250 cm³-re egészítjük ki.", "topic_id": "szamitas", "options": ["A térfogatot minden esetben grammként kell behelyettesíteni.", "A reakcióegyenlet együtthatói nem befolyásolják a számítást.", "n = cV = 0,1 × 0,250 = 0,025 mol", "A számításhoz nincs szükség anyagmennyiségre vagy moláris tömegre."], "correct": 2}, {"id": 43, "topic": "Számítás", "no": "5", "q": "100 cm³ 0,2 mólos kénsavoldat hány g KOH-dal közömbösíthető? M(KOH)=56,0 g/mol.", "a": "n(H2SO4)=0,100×0,2=0,020 mol. H2SO4 + 2 KOH → K2SO4 + 2 H2O, ezért n(KOH)=0,040 mol. m=0,040×56,0=2,24 g.", "topic_id": "szamitas", "options": ["A reakcióegyenlet együtthatói nem befolyásolják a számítást.", "n(H2SO4)=0,100×0,2=0,020 mol", "A térfogatot minden esetben grammként kell behelyettesíteni.", "A számításhoz nincs szükség anyagmennyiségre vagy moláris tömegre."], "correct": 1}];
+const TOPICS = [["all", "📚", "Összes kérdés"], ["atomok", "⚛️", "Atomok és elektronszerkezet"], ["kotések", "🔗", "Kötések és molekulák"], ["allapot", "🌡️", "Állapotjelzők és termodinamika"], ["reakciok", "⚗️", "Kémiai reakciók"], ["savbazis", "🧪", "Sav-bázis"], ["redox", "🔋", "Redoxireakciók"], ["szerves", "🧬", "Szerves kémia"], ["szamitas", "🧮", "Számítások"]];
+
+const state = {
+  progress: JSON.parse(localStorage.getItem("kemiaProgressFixed") || "{}"),
+  practice: {items:[], index:0, answered:false},
+  quiz: {items:[], index:0, score:0, answered:false},
+  cards: {items:[], index:0, back:false}
+};
+
+function shuffle(arr){ return arr.slice().sort(function(){ return Math.random()-0.5; }); }
+function topicName(id){
+  const x=TOPICS.find(function(t){return t[0]===id;});
+  return x ? x[2] : "Kérdések";
+}
+function filterTopic(id){
+  return id==="all" ? DATA : DATA.filter(function(x){return x.topic_id===id;});
+}
+function save(){ localStorage.setItem("kemiaProgressFixed",JSON.stringify(state.progress)); renderStats(); }
+
+function showPage(id){
+  document.querySelectorAll(".page").forEach(function(x){x.classList.remove("active");});
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".nav").forEach(function(x){x.classList.remove("active");});
+  const b=document.querySelector('.nav[data-page="'+id+'"]');
+  if(b)b.classList.add("active");
+  if(id==="mistakes")renderMistakes();
+  if(id==="stats")renderStats();
+}
+document.querySelectorAll(".nav").forEach(function(b){b.addEventListener("click",function(){showPage(b.dataset.page);});});
+
+function buildTopics(){
+  document.getElementById("topicGrid").innerHTML=TOPICS.map(function(t){
+    if(t[0]==="all")return "";
+    return '<div class="topic" data-topic="'+t[0]+'"><div class="icon">'+t[1]+'</div><h3>'+t[2]+'</h3><p>'+filterTopic(t[0]).length+' kérdés</p></div>';
+  }).join("");
+  document.querySelectorAll(".topic").forEach(function(el){
+    el.addEventListener("click",function(){startPractice(el.dataset.topic);});
+  });
+  ["quizTopic","cardTopic"].forEach(function(id){
+    document.getElementById(id).innerHTML=TOPICS.map(function(t){
+      return '<option value="'+t[0]+'">'+t[1]+' '+t[2]+'</option>';
+    }).join("");
+  });
+}
+
+function startPractice(topic){
+  state.practice.items=shuffle(filterTopic(topic));
+  state.practice.index=0;
+  showPage("practice");
+  renderPractice();
+}
+function renderPractice(){
+  const s=state.practice, x=s.items[s.index];
+  if(!x)return;
+  s.answered=false;
+  document.getElementById("pTopic").textContent=topicName(x.topic_id);
+  document.getElementById("pCount").textContent=(s.index+1)+" / "+s.items.length;
+  document.getElementById("pProgress").style.width=(s.index/s.items.length*100)+"%";
+  document.getElementById("pQuestion").textContent=x.q;
+  document.getElementById("pFeedback").className="feedback hidden";
+  document.getElementById("pNext").disabled=true;
+  document.getElementById("pOptions").innerHTML=x.options.map(function(o,i){
+    return '<button class="option" data-i="'+i+'">'+o+'</button>';
+  }).join("");
+  document.querySelectorAll("#pOptions .option").forEach(function(b){
+    b.addEventListener("click",function(){answerPractice(Number(b.dataset.i),b);});
+  });
+}
+function answerPractice(i,button){
+  const s=state.practice,x=s.items[s.index];
+  if(s.answered)return;
+  s.answered=true;
+  const buttons=document.querySelectorAll("#pOptions .option");
+  buttons.forEach(function(b){b.classList.add("lock");});
+  buttons[x.correct].classList.add("correct");
+  const good=i===x.correct;
+  if(!good)button.classList.add("wrong");
+  state.progress[x.id]=good?"good":"bad";save();
+  const f=document.getElementById("pFeedback");
+  f.className="feedback "+(good?"good":"bad");
+  f.innerHTML=(good?"✅ Helyes!":"❌ Nem ez volt a helyes válasz.")+"<br><br><b>Helyes válasz:</b> "+x.options[x.correct];
+  document.getElementById("pNext").disabled=false;
+}
+document.getElementById("pNext").addEventListener("click",function(){
+  if(state.practice.index < state.practice.items.length-1){state.practice.index++;renderPractice();}
+  else alert("🎉 A gyakorlókört befejezted!");
+});
+document.getElementById("pShuffle").addEventListener("click",function(){
+  state.practice.items=shuffle(state.practice.items);state.practice.index=0;renderPractice();
+});
+
+document.getElementById("quizStart").addEventListener("click",function(){
+  const topic=document.getElementById("quizTopic").value;
+  let items=shuffle(filterTopic(topic));
+  const n=document.getElementById("quizCount").value;
+  if(n!=="all")items=items.slice(0,Number(n));
+  state.quiz={items:items,index:0,score:0,answered:false};
+  document.getElementById("quizBox").classList.remove("hidden");
+  renderQuiz();
+});
+function renderQuiz(){
+  const s=state.quiz,x=s.items[s.index];
+  if(!x)return;
+  s.answered=false;
+  document.getElementById("qNo").textContent=(s.index+1)+" / "+s.items.length;
+  document.getElementById("qScore").textContent=s.score;
+  document.getElementById("qProgress").style.width=(s.index/s.items.length*100)+"%";
+  document.getElementById("qQuestion").textContent=x.q;
+  document.getElementById("qFeedback").className="feedback hidden";
+  document.getElementById("qNext").disabled=true;
+  document.getElementById("qOptions").innerHTML=x.options.map(function(o,i){
+    return '<button class="option" data-i="'+i+'">'+o+'</button>';
+  }).join("");
+  document.querySelectorAll("#qOptions .option").forEach(function(b){
+    b.addEventListener("click",function(){answerQuiz(Number(b.dataset.i),b);});
+  });
+}
+function answerQuiz(i,button){
+  const s=state.quiz,x=s.items[s.index];
+  if(s.answered)return;
+  s.answered=true;
+  const buttons=document.querySelectorAll("#qOptions .option");
+  buttons.forEach(function(b){b.classList.add("lock");});
+  buttons[x.correct].classList.add("correct");
+  const good=i===x.correct;
+  if(!good)button.classList.add("wrong");
+  if(good)s.score++;
+  state.progress[x.id]=good?"good":"bad";save();
+  const f=document.getElementById("qFeedback");
+  f.className="feedback "+(good?"good":"bad");
+  f.innerHTML=(good?"✅ Helyes!":"❌ Hibás!")+"<br><br><b>Helyes válasz:</b> "+x.options[x.correct];
+  document.getElementById("qScore").textContent=s.score;
+  document.getElementById("qNext").disabled=false;
+}
+document.getElementById("qNext").addEventListener("click",function(){
+  if(state.quiz.index<state.quiz.items.length-1){state.quiz.index++;renderQuiz();}
+  else{document.getElementById("qProgress").style.width="100%";alert("🏁 Vizsgakör vége! Pontszám: "+state.quiz.score+" / "+state.quiz.items.length);}
+});
+
+function newCards(){
+  state.cards.items=shuffle(filterTopic(document.getElementById("cardTopic").value));
+  state.cards.index=0;state.cards.back=false;renderCards();
+}
+function renderCards(){
+  const s=state.cards,x=s.items[s.index];if(!x)return;
+  document.getElementById("cardText").textContent=s.back?x.options[x.correct]:x.q;
+  document.getElementById("cardHint").textContent=s.back?"Koppints vissza a kérdéshez 👆":"Koppints a válaszhoz 👆";
+}
+document.getElementById("flash").addEventListener("click",function(){state.cards.back=!state.cards.back;renderCards();});
+document.getElementById("cardShuffle").addEventListener("click",newCards);
+document.getElementById("cardNext").addEventListener("click",function(){state.cards.index=(state.cards.index+1)%state.cards.items.length;state.cards.back=false;renderCards();});
+document.getElementById("cardPrev").addEventListener("click",function(){state.cards.index=(state.cards.index-1+state.cards.items.length)%state.cards.items.length;state.cards.back=false;renderCards();});
+
+function renderMistakes(){
+  const a=DATA.filter(function(x){return state.progress[x.id]==="bad";});
+  document.getElementById("mistakeList").innerHTML=a.length ? a.map(function(x){
+    return '<button data-id="'+x.id+'"><b>'+topicName(x.topic_id)+'</b><br>'+x.q+'</button>';
+  }).join("") : '<p class="small">🎉 Jelenleg nincs hibásként jelölt kérdésed.</p>';
+  document.querySelectorAll("#mistakeList button").forEach(function(b){
+    b.addEventListener("click",function(){
+      const x=DATA.find(function(z){return z.id===Number(b.dataset.id);});
+      state.practice.items=[x];state.practice.index=0;showPage("practice");renderPractice();
+    });
+  });
+}
+function renderStats(){
+  const v=Object.values(state.progress),t=v.length,g=v.filter(function(x){return x==="good";}).length,b=v.filter(function(x){return x==="bad";}).length;
+  document.getElementById("sTotal").textContent=t;document.getElementById("sGood").textContent=g;document.getElementById("sBad").textContent=b;document.getElementById("sRate").textContent=t?Math.round(g/t*100)+"%":"0%";
+}
+document.getElementById("reset").addEventListener("click",function(){
+  if(confirm("Biztosan törlöd a haladásodat?")){state.progress={};save();renderMistakes();}
+});
+
+buildTopics();newCards();renderStats();
+startPractice("all");
+
+/* ===== SAV–BÁZIS LABOR ===== */
+const ACID_LAB = [
+  {acid:"HCl", base:"KOH", eq:"HCl + KOH → H₂O + KCl", product:"H₂O + KCl"},
+  {acid:"HCl", base:"NaOH", eq:"HCl + NaOH → H₂O + NaCl", product:"H₂O + NaCl"},
+  {acid:"H₂SO₄", base:"Ca(OH)₂", eq:"H₂SO₄ + Ca(OH)₂ → 2 H₂O + CaSO₄", product:"2 H₂O + CaSO₄"},
+  {acid:"H₃PO₄", base:"Ca(OH)₂", eq:"2 H₃PO₄ + 3 Ca(OH)₂ → 6 H₂O + Ca₃(PO₄)₂", product:"6 H₂O + Ca₃(PO₄)₂"},
+  {acid:"H₂SO₄", base:"NH₄OH", eq:"H₂SO₄ + 2 NH₄OH → 2 H₂O + (NH₄)₂SO₄", product:"2 H₂O + (NH₄)₂SO₄"},
+  {acid:"HNO₃", base:"NaOH", eq:"HNO₃ + NaOH → H₂O + NaNO₃", product:"H₂O + NaNO₃"},
+  {acid:"HNO₂", base:"NaOH", eq:"HNO₂ + NaOH → H₂O + NaNO₂", product:"H₂O + NaNO₂"},
+  {acid:"H₂SO₃", base:"2 NaOH", eq:"H₂SO₃ + 2 NaOH → 2 H₂O + Na₂SO₃", product:"2 H₂O + Na₂SO₃"},
+  {acid:"H₂CO₃", base:"2 KOH", eq:"H₂CO₃ + 2 KOH → 2 H₂O + K₂CO₃", product:"2 H₂O + K₂CO₃"},
+  {acid:"2 HNO₃", base:"Mg(OH)₂", eq:"2 HNO₃ + Mg(OH)₂ → 2 H₂O + Mg(NO₃)₂", product:"2 H₂O + Mg(NO₃)₂"},
+  {acid:"2 HCl", base:"Mg(OH)₂", eq:"2 HCl + Mg(OH)₂ → 2 H₂O + MgCl₂", product:"2 H₂O + MgCl₂"},
+  {acid:"2 HNO₂", base:"Ca(OH)₂", eq:"2 HNO₂ + Ca(OH)₂ → 2 H₂O + Ca(NO₂)₂", product:"2 H₂O + Ca(NO₂)₂"},
+  {acid:"2 H₃PO₃", base:"3 Ca(OH)₂", eq:"2 H₃PO₃ + 3 Ca(OH)₂ → 6 H₂O + Ca₃(PO₃)₂", product:"6 H₂O + Ca₃(PO₃)₂"},
+  {acid:"H₃PO₄", base:"3 NaOH", eq:"H₃PO₄ + 3 NaOH → 3 H₂O + Na₃PO₄", product:"3 H₂O + Na₃PO₄"},
+  {acid:"2 HCl", base:"Ca(OH)₂", eq:"2 HCl + Ca(OH)₂ → 2 H₂O + CaCl₂", product:"2 H₂O + CaCl₂"},
+  {acid:"2 HNO₃", base:"Ca(OH)₂", eq:"2 HNO₃ + Ca(OH)₂ → 2 H₂O + Ca(NO₃)₂", product:"2 H₂O + Ca(NO₃)₂"},
+  {acid:"2 HCl", base:"2 Al(OH)₃", eq:"6 HCl + 2 Al(OH)₃ → 6 H₂O + 2 AlCl₃", product:"6 H₂O + 2 AlCl₃"},
+  {acid:"3 H₂SO₄", base:"2 Al(OH)₃", eq:"3 H₂SO₄ + 2 Al(OH)₃ → 6 H₂O + Al₂(SO₄)₃", product:"6 H₂O + Al₂(SO₄)₃"}
+];
+
+const ACID_NAMES = [
+  ["HCl","sósav","sav"],["H₂CO₃","szénsav","sav"],["HNO₂","salétromossav","sav"],
+  ["HNO₃","salétromsav","sav"],["H₂SO₃","kénessav","sav"],["H₂SO₄","kénsav","sav"],
+  ["H₃PO₃","foszforossav","sav"],["H₃PO₄","foszforsav","sav"],
+  ["NaOH","nátrium-hidroxid","bázis"],["KOH","kálium-hidroxid","bázis"],
+  ["Mg(OH)₂","magnézium-hidroxid","bázis"],["Ca(OH)₂","kalcium-hidroxid","bázis"],
+  ["Al(OH)₃","alumínium-hidroxid","bázis"],["NH₄OH","ammónium-hidroxid","bázis"]
+];
+
+let labMode = "equation", labItems = [], labIndex = 0, labScore = 0, labAnswered = false;
+
+function labShuffle(a){ return a.slice().sort(function(){return Math.random()-0.5;}); }
+function labPickWrong(correct, pool, n){
+  return labShuffle(pool.filter(function(x){return x!==correct;})).slice(0,n);
+}
+function labModeLabel(){
+  return {
+    equation:"Egyenlet felismerése", products:"Mi keletkezik?", names:"Név ↔ képlet",
+    balance:"Rendezés", truefalse:"Igaz vagy hamis?"
+  }[labMode];
+}
+function labMakeItems(){
+  const eqs = labShuffle(ACID_LAB);
+  if(labMode==="equation"){
+    labItems = eqs.map(function(x){
+      const wrongs = labPickWrong(x.eq, ACID_LAB.map(function(y){return y.eq;}), 3);
+      return {q:"Melyik a helyes közömbösítési egyenlet?", sub:x.acid+" + "+x.base, options:labShuffle([x.eq].concat(wrongs)), correct:x.eq, explain:"A helyes, rendezett egyenlet: "+x.eq};
+    });
+  } else if(labMode==="products"){
+    labItems = eqs.map(function(x){
+      const wrongs = labPickWrong(x.product, ACID_LAB.map(function(y){return y.product;}), 3);
+      return {q:"Mi keletkezik a megadott sav és bázis reakciójában?", sub:x.acid+" + "+x.base, options:labShuffle([x.product].concat(wrongs)), correct:x.product, explain:"A helyes termékek: "+x.product};
+    });
+  } else if(labMode==="balance"){
+    labItems = eqs.map(function(x){
+      const raw = x.eq.replace(/2 |3 |6 /g,"");
+      const wrongs = labPickWrong(x.eq, [
+        raw,
+        x.eq.replace(/^2 /,"").replace(" + 2 "," + ").replace(" → "," → "),
+        x.eq.replace("2 H₃PO₄ + 3 Ca(OH)₂","H₃PO₄ + Ca(OH)₂")
+      ], 3);
+      return {q:"Melyik egyenlet van helyesen rendezve?", sub:x.eq.split(" → ")[0]+" → ?", options:labShuffle([x.eq].concat(wrongs)), correct:x.eq, explain:"Helyesen rendezve: "+x.eq};
+    });
+  } else if(labMode==="names"){
+    labItems = labShuffle(ACID_NAMES).map(function(x){
+      const isFormulaQuestion = Math.random() < 0.5;
+      if(isFormulaQuestion){
+        const wrongs = labPickWrong(x[0], ACID_NAMES.map(function(y){return y[0];}), 3);
+        return {q:"Melyik képlet tartozik ehhez a névhez?", sub:x[1], options:labShuffle([x[0]].concat(wrongs)), correct:x[0], explain:x[1]+" = "+x[0]};
+      } else {
+        const wrongs = labPickWrong(x[1], ACID_NAMES.map(function(y){return y[1];}), 3);
+        return {q:"Mi ennek az anyagnak a neve?", sub:x[0], options:labShuffle([x[1]].concat(wrongs)), correct:x[1], explain:x[0]+" = "+x[1]};
+      }
+    });
+  } else {
+    const truths = [
+      ["A közömbösítés során só és víz keletkezhet.","IGAZ","A felsorolt példák közömbösítési reakciók, amelyekben só és víz keletkezik."],
+      ["HCl + NaOH → H₂O + NaCl egy rendezett egyenlet.","IGAZ","A két oldalon 1 H, 1 Cl, 1 Na és 1 O szerepel."],
+      ["H₂SO₄ + Ca(OH)₂ → 2 H₂O + CaSO₄ már teljesen rendezett.","HAMIS","2 H₂O szükséges."],
+      ["H₃PO₄ + Ca(OH)₂ → 6 H₂O + Ca₃(PO₄)₂ együtthatók nélkül is rendezett.","HAMIS","A helyes teljes rendezés: 2 : 3 : 1 : 6."],
+      ["HNO₃ + NaOH → NaNO₃ + H₂O helyes közömbösítés.","IGAZ","Ez a felsorolt példák egyike."],
+      ["A kénsav képlete H₂SO₄.","IGAZ","A forrásban a kénsav H₂SO₄ képlettel szerepel."],
+      ["A sósav képlete HNO₃.","HAMIS","A sósav képlete HCl; HNO₃ a salétromsav."],
+      ["A nátrium-hidroxid képlete NaOH.","IGAZ","A felsorolt bázisok között így szerepel."],
+      ["A foszforsav képlete H₃PO₄.","IGAZ","A felsorolt savak között így szerepel."],
+      ["A KOH a felsorolt savak egyike.","HAMIS","A KOH kálium-hidroxid, tehát a felsorolt bázisok közé tartozik."]
+    ];
+    labItems = labShuffle(truths).map(function(x){
+      return {q:x[0], options:["IGAZ","HAMIS"], correct:x[1], explain:x[2]};
+    });
+  }
+  labIndex=0; labScore=0; labAnswered=false;
+  document.getElementById("labModeName").textContent=labModeLabel();
+  document.getElementById("labScore").textContent="0";
+  renderLab();
+}
+function renderLab(){
+  const x=labItems[labIndex];
+  if(!x)return;
+  document.getElementById("labNo").textContent=(labIndex+1)+" / "+labItems.length;
+  document.getElementById("labProgress").style.width=((labIndex/labItems.length)*100)+"%";
+  document.getElementById("labQuestion").textContent=x.q;
+  const eq=document.getElementById("labEq");
+  if(x.sub){eq.textContent=x.sub;eq.classList.remove("hidden");} else {eq.classList.add("hidden");}
+  document.getElementById("labOptions").innerHTML=x.options.map(function(o,i){
+    return '<button class="option" data-labi="'+i+'">'+o+'</button>';
+  }).join("");
+  document.getElementById("labFeedback").className="feedback hidden";
+  document.getElementById("labFeedback").textContent="";
+  document.getElementById("labNext").disabled=true;
+  document.querySelectorAll("#labOptions .option").forEach(function(b){
+    b.addEventListener("click",function(){answerLab(b.textContent,b);});
+  });
+}
+function answerLab(value,button){
+  if(labAnswered)return;
+  labAnswered=true;
+  const x=labItems[labIndex];
+  const good=value===x.correct;
+  if(good)labScore++;
+  document.getElementById("labScore").textContent=labScore;
+  document.querySelectorAll("#labOptions .option").forEach(function(b){
+    b.classList.add("lock");
+    if(b.textContent===x.correct)b.classList.add("correct");
+    else if(b===button && !good)b.classList.add("wrong");
+  });
+  const fb=document.getElementById("labFeedback");
+  fb.className="feedback "+(good?"good":"bad");
+  fb.innerHTML=(good?"✅ Helyes! ":"❌ Nem ez. ")+"<b>"+x.explain+"</b>";
+  document.getElementById("labNext").disabled=false;
+}
+document.querySelectorAll(".lab-mode").forEach(function(b){
+  b.addEventListener("click",function(){
+    document.querySelectorAll(".lab-mode").forEach(function(x){x.classList.remove("active");});
+    b.classList.add("active");
+    labMode=b.dataset.labmode;
+    labMakeItems();
+  });
+});
+document.getElementById("labNext").addEventListener("click",function(){
+  if(!labAnswered)return;
+  if(labIndex<labItems.length-1){labIndex++;labAnswered=false;renderLab();}
+  else{
+    const fb=document.getElementById("labFeedback");
+    fb.className="feedback good";
+    fb.innerHTML="🎉 <b>Sorozat vége!</b> Eredmény: "+labScore+" / "+labItems.length+" ("+Math.round(labScore/labItems.length*100)+"%). Kattints az „Új sorozat” gombra, ha újra szeretnéd.";
+    document.getElementById("labNext").disabled=true;
+    document.getElementById("labProgress").style.width="100%";
+  }
+});
+document.getElementById("labShuffle").addEventListener("click",labMakeItems);
+labMakeItems();
+/* ===== /SAV–BÁZIS LABOR ===== */
+
+</script>
+</body>
+</html>
